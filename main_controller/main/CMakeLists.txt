@@ -1,6 +1,6 @@
 idf_component_register(
     SRCS
-        "posture-sys.c"
+        "main.c"
         "server.c"
         "wifi_connection.c"
         "wifi_ap_setup.c"

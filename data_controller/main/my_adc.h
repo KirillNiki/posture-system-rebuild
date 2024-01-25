@@ -7,7 +7,7 @@
 
 #define gpios_num 10
 #define serial_str_len 128
-#define temp_dig_str_len 6
+#define temp_dig_str_len 12
 #define adc1_gpios_count 8
 #define adc2_gpios_count 10
 
