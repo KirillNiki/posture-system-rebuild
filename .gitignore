@@ -1,6 +1,8 @@
 
 data_controller/.vscode
 data_controller/build
+data_controller/managed_components
 
 main_controller/.vscode
 main_controller/build
+main_controller/managed_components
