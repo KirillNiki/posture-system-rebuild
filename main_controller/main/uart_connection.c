@@ -27,9 +27,6 @@ void init_uart(void)
     QueueHandle_t uart_queue;
     ESP_ERROR_CHECK(uart_driver_install(UART_NUM, uart_buffer_size,
                                         uart_buffer_size, 10, &uart_queue, 0));
-
-    read_bites();
-    printf(uart_buffer);
 }
 
 void write_bites(char *string)
