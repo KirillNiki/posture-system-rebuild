@@ -19,7 +19,6 @@
 #include "my_adc.h"
 
 int weights[gpios_num];
-
 void rx_task(void *args)
 {
     while (1)

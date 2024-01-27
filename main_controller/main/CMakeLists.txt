@@ -1,11 +1,10 @@
 idf_component_register(
     SRCS
         "main.c"
-        "server.c"
-        "wifi_connection.c"
-        "wifi_ap_setup.c"
-        "spiffs_communicator.c"
-        "uart_connection.c"
+        "~/esp/posture-system/my_interfaces/server.c"
+        "~/esp/posture-system/my_interfaces/wifi_ap.c"
+        "~/esp/posture-system/my_interfaces/spiffs.c"
+        "~/esp/posture-system/my_interfaces/uart.c"
 
     EMBED_TXTFILES
         "./certs/cacert.pem"
@@ -13,6 +12,7 @@ idf_component_register(
 
     INCLUDE_DIRS
         "."
+        "~/esp/posture-system/my_interfaces"
         
     REQUIRES
         "esp_https_server"

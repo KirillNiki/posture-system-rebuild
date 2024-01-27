@@ -1,11 +1,12 @@
 idf_component_register(
     SRCS
-        "adc_communicator.c"
         "data_reading.c"
-        "uart_connection.c"
+        "~/esp/posture-system/my_interfaces/adc/adc.c"
+        "~/esp/posture-system/my_interfaces/uart/uart.c"
 
     INCLUDE_DIRS
         "."
+        "~/esp/posture-system/my_interfaces/"
         
     REQUIRES
         "driver"

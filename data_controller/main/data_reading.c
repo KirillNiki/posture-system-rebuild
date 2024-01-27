@@ -7,8 +7,8 @@
 
 #include "esp_adc_cal.h"
 #include "freertos/task.h"
-#include "my_uart.h"
-#include "my_adc.h"
+#include "uart/uart.h"
+#include "adc/adc.h"
 
 static char serial_string[serial_str_len];
 static int gpios[gpios_num] = {13, 12, 14, 27, 33, 26, 25, 34, 32, 35};

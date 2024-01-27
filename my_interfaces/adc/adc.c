@@ -7,7 +7,7 @@
 #include "driver/gpio.h"
 #include "esp_adc/adc_oneshot.h"
 #include "esp_adc/adc_continuous.h"
-#include "my_adc.h"
+#include "adc.h"
 
 adc_oneshot_unit_handle_t adc1_handle;
 adc_oneshot_unit_handle_t adc2_handle;
