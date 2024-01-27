@@ -14,9 +14,9 @@
 #include "sdkconfig.h"
 #include "freertos/task.h"
 
-#include "server.h"
-#include "my_uart.h"
-#include "my_adc.h"
+#include "https/server.h"
+#include "uart/uart.h"
+#include "adc/adc.h"
 
 int weights[gpios_num];
 void rx_task(void *args)

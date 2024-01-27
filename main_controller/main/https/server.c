@@ -12,8 +12,8 @@
 #include "esp_tls.h"
 #include "sdkconfig.h"
 
-#include "wifi.h"
-#include "spiffs.h"
+#include "wifi/wifi.h"
+#include "spiffs/spiffs.h"
 #include "server.h"
 
 static const char *TAG = "my_server";
@@ -61,10 +61,21 @@ static esp_err_t file_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+static esp_err_t data_handler(httpd_req_t *req)
+{
+
+}
+
 static const httpd_uri_t main_uri = {
     .uri = "/",
     .method = HTTP_GET,
     .handler = main_handler,
+};
+
+static const httpd_uri_t data_uri = {
+    .uri = "/data",
+    .method = HTTP_GET,
+    .handler = data_handler,
 };
 
 static httpd_handle_t start_webserver(void)
@@ -93,6 +104,7 @@ static httpd_handle_t start_webserver(void)
         return NULL;
     }
     httpd_register_uri_handler(server, &main_uri);
+    httpd_register_uri_handler(server, &data_uri);
 
     int index = 0;
     for (int i = 0; i < file_count; i++)
