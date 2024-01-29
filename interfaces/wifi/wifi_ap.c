@@ -14,7 +14,6 @@
 #include "esp_system.h"
 #include <netdb.h>
 
-
 #include "wifi.h"
 
 static const char *SOFTAP_TAG = "softap";
@@ -48,13 +47,13 @@ void wifi_ap_setup(void)
     ESP_ERROR_CHECK(esp_netif_init());
     esp_netif_t *wifiAP = esp_netif_create_default_wifi_ap();
     esp_netif_ip_info_t ipInfo;
-    memset(&ipInfo, 0 , sizeof(esp_netif_ip_info_t));
-        ipInfo.ip.addr = ipaddr_addr("192.168.0.1");
-        ipInfo.gw.addr = ipaddr_addr("192.168.0.1");
-        ipInfo.netmask.addr = ipaddr_addr("255.255.255.0");
-        esp_netif_dhcps_stop(wifiAP);
-        esp_netif_set_ip_info(wifiAP, &ipInfo);
-        esp_netif_dhcps_start(wifiAP);
+    memset(&ipInfo, 0, sizeof(esp_netif_ip_info_t));
+    ipInfo.ip.addr = ipaddr_addr("192.168.0.1");
+    ipInfo.gw.addr = ipaddr_addr("192.168.0.1");
+    ipInfo.netmask.addr = ipaddr_addr("255.255.255.0");
+    esp_netif_dhcps_stop(wifiAP);
+    esp_netif_set_ip_info(wifiAP, &ipInfo);
+    esp_netif_dhcps_start(wifiAP);
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));

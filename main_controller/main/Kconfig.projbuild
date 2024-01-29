@@ -1,5 +1,4 @@
 menu "My WIFI"
-
     menu "Wifi Connect"
         config CONNECT_WIFI
             bool CONNECT_WIFI
@@ -36,5 +35,18 @@ menu "My WIFI"
             int "AP_MAX_CONN"
             default 4
     endmenu
- 
+endmenu
+
+menu "MY_RTC_Config"
+    config SCLK_PIN
+        int SCLK_PIN
+        default 0
+
+    config CE_PIN
+        int CE_PIN
+        default 2
+
+    config IO_PIN
+        int IO_PIN
+        default 4
 endmenu

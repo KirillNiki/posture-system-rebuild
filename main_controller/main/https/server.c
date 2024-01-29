@@ -11,6 +11,7 @@
 #include <esp_https_server.h>
 #include "esp_tls.h"
 #include "sdkconfig.h"
+#include "cJSON.h"
 
 #include "wifi/wifi.h"
 #include "spiffs/spiffs.h"
@@ -63,7 +64,15 @@ static esp_err_t file_handler(httpd_req_t *req)
 
 static esp_err_t data_handler(httpd_req_t *req)
 {
+    cJSON *root = cJSON_CreateObject();
+    cJSON *weights_json = cJSON_CreateIntArray(weights, gpios_num);
+    cJSON_AddItemToObject(root, "weights", weights_json);
 
+    char *json_string = cJSON_Print(root);
+    httpd_resp_send(req, json_string, HTTPD_RESP_USE_STRLEN);
+    cJSON_Delete(root);
+    cJSON_free(json_string);
+    return ESP_OK;
 }
 
 static const httpd_uri_t main_uri = {

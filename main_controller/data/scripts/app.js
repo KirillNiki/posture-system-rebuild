@@ -24,6 +24,7 @@ async function getData() {
 
     data.allValuesSum = 0;
     for (let i = 0; i < data.weights.length; i++) {
+        console.log(data.weights[i]);
         data.allValuesSum += parseInt(data.weights[i]);
     }
     data.valuePerPersent = data.allValuesSum / 100;

@@ -415,6 +415,14 @@ CONFIG_AP_MAX_CONN=4
 # end of My WIFI
 
 #
+# MY_RTC_Config
+#
+CONFIG_SCLK_PIN=0
+CONFIG_CE_PIN=2
+CONFIG_IO_PIN=4
+# end of MY_RTC_Config
+
+#
 # ESP RainMaker Config
 #
 CONFIG_ESP_RMAKER_NO_CLAIM=y
