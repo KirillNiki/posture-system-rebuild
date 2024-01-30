@@ -50,3 +50,21 @@ menu "MY_RTC_Config"
         int IO_PIN
         default 4
 endmenu
+
+menu "MY_POSTURE_SYS_CONFIG"
+    config WEIGTH_FACTOR
+        int WEIGTH_FACTOR
+        default 34
+
+    config COUNTABLE_WEIGHT
+        int COUNTABLE_WEIGHT
+        default 400
+
+    config MIN_COUNTABLE_WEIGHTS
+        int MIN_COUNTABLE_WEIGHTS
+        default 4
+    
+    config MAX_NOT_SIT_TIME
+        int "MAX_NOT_SIT_TIME in seconds"
+        default 5
+endmenu

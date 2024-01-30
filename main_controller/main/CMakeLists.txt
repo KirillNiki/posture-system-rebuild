@@ -1,6 +1,7 @@
 idf_component_register(
     SRCS
         "main.c"
+        "sort.c"
         "https/server.c"
         "~/esp/posture-system/interfaces/wifi/wifi_ap.c"
         "~/esp/posture-system/interfaces/spiffs/spiffs.c"

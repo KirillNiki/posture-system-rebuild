@@ -12,6 +12,7 @@
 
 extern char uart_buffer[uart_chank_buffer_size];
 
+unsigned int millis(void);
 void init_uart(void);
 void write_bites(char *string);
 void read_bites(void);

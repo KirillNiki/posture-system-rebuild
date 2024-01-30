@@ -5,10 +5,17 @@
 #include "driver/gpio.h"
 #include "sdkconfig.h"
 #include "esp_log.h"
+#include <sys/time.h>
 
 #include "uart.h"
 char uart_buffer[uart_chank_buffer_size];
 
+unsigned int millis(void)
+{
+    struct timeval t;
+    gettimeofday(&t, NULL);
+    return t.tv_sec * 1000 + (t.tv_usec + 500) / 1000;
+}
 
 void init_uart(void)
 {
