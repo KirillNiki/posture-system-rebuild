@@ -88,7 +88,7 @@ void list_partiotions(void)
         }
         int size = (int)strlen(de->d_name) + 1;
         strcpy(file_strings[index], "/");
-        strcat(file_strings[index],  de->d_name);
+        strcat(file_strings[index], de->d_name);
         file_strings[index][size] = 0;
 
         printf("Found file: %s\n", file_strings[index]);

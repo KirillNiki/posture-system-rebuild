@@ -67,4 +67,16 @@ menu "MY_POSTURE_SYS_CONFIG"
     config MAX_NOT_SIT_TIME
         int "MAX_NOT_SIT_TIME in seconds"
         default 5
+
+    config MAX_INFO_VALUES
+        int MAX_INFO_VALUES
+        default 12
+
+    config SAVE_DATA_DELAY
+        int SAVE_DATA_DELAY
+        default 2000
+
+    config MIN_WEIGHTS_DIFF
+        int MIN_WEIGHTS_DIFF
+        default 500
 endmenu

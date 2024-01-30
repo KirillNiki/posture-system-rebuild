@@ -5,6 +5,7 @@
 
 #define SPIFFS_TAG "spiffs"
 #define main_file "/index.html"
+#define info_file_name "/info.txt"
 #define buffer_size 20000 // in chars
 #define file_count 10
 #define file_name_length 40 // in cahrs
