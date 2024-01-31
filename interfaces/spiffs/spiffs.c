@@ -9,6 +9,8 @@
 #include "esp_spiffs.h"
 
 #include "spiffs.h"
+#include "data_interface.h"
+
 char file_strings[file_count][file_name_length];
 
 void join_path(char *result_path, char *path)
@@ -17,37 +19,42 @@ void join_path(char *result_path, char *path)
     strcat(result_path, path);
 }
 
-void work_with_file(char *path, char *line, char *mode)
+void write_bin_file(void)
 {
-    int size = (int)strlen(path);
+    int size = (int)strlen(info_file_name);
     char result_path[8 + size]; // len of "/spiffs" + 1 for 0
-    join_path(result_path, path);
+    join_path(result_path, info_file_name);
 
-    FILE *file = fopen(result_path, mode);
+    FILE *file = fopen(result_path, "wb");
     if (file == NULL)
     {
         ESP_LOGE(SPIFFS_TAG, "Failed to open file for writing");
         return;
     }
-    fprintf(file, line);
+    fwrite(&info_file, sizeof(struct Info_file_struct), 1, file);
     fclose(file);
 }
 
-void write_file(char *path, char *line)
+void read_bin_file(void)
 {
-    char *mode = "w";
-    work_with_file(path, line, mode);
+    int size = (int)strlen(info_file_name);
+    char result_path[8 + size]; // len of "/spiffs" + 1 for 0
+    join_path(result_path, info_file_name);
+
+    FILE *file = fopen(result_path, "rb");
+    if (file == NULL)
+    {
+        ESP_LOGE(SPIFFS_TAG, "error openning");
+        return;
+    }
+    size_t n;
+    n = fread(&info_file, 1, sizeof(struct Info_file_struct), file);
+    fclose(file);
 }
 
-void append_file(char *path, char *line)
+void read_my_file(char *buffer, long size_of_buffer, char *path)
 {
-    char *mode = "a";
-    work_with_file(path, line, mode);
-}
-
-void read_file(char *buffer, long size_of_buffer, char *path)
-{
-    if ((int)sizeof(buffer) == 0)
+    if (sizeof(buffer) == 0)
     {
         ESP_LOGE(SPIFFS_TAG, "error: buffer size == 0");
         return;
@@ -63,7 +70,7 @@ void read_file(char *buffer, long size_of_buffer, char *path)
         return;
     }
     size_t n;
-    n = fread(buffer, sizeof(buffer[0]), size_of_buffer, file);
+    n = fread(buffer, 1, size_of_buffer, file);
     buffer[n] = 0;
     fclose(file);
 }

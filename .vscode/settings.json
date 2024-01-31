@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "serializeintrin.h": "c"
+        "serializeintrin.h": "c",
+        "sdkconfig.h": "c"
     }
 }

@@ -16,6 +16,7 @@
 #include "wifi/wifi.h"
 #include "spiffs/spiffs.h"
 #include "server.h"
+#include "data_interface.h"
 
 static const char *TAG = "my_server";
 static httpd_uri_t file_uris[file_count - 1]; // not for main file
@@ -23,7 +24,7 @@ static httpd_uri_t file_uris[file_count - 1]; // not for main file
 static esp_err_t main_handler(httpd_req_t *req)
 {
     char buffer[buffer_size];
-    read_file(buffer, buffer_size, main_file);
+    read_my_file(buffer, buffer_size, main_file);
 
     httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, buffer, HTTPD_RESP_USE_STRLEN);
@@ -35,7 +36,7 @@ static esp_err_t file_handler(httpd_req_t *req)
     printf("sending: >>>>> %s\n", req->uri);
     char buffer[buffer_size];
     char *path = (char *)req->uri;
-    read_file(buffer, buffer_size, path);
+    read_my_file(buffer, buffer_size, path);
 
     char *file_type = strchr(path, '.');
     if (strcmp(file_type, ".css") == 0)

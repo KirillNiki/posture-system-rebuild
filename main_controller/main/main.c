@@ -21,7 +21,7 @@
 #include "uart/uart.h"
 #include "adc/adc.h"
 #include "ds1302/ds1302.h"
-#include "struct_serialization.h"
+#include "data_interface.h"
 
 long sitting_timer = 0;
 long not_sitting_timer = 0;
@@ -124,14 +124,24 @@ void rx_task(void *args)
         ds1302_get_time(&rtc_dev, &time_struct);
         sitting_timer_change();
 
-        char *time = asctime(&time_struct);
-        printf("%s", time);
-        for (int i = 0; i < gpios_num; i++)
-        {
-            printf("%d ", weights[i]);
-        }
+        // char *time = asctime(&time_struct);
+        // printf("%s", time);
+        // for (int i = 0; i < gpios_num; i++)
+        // {
+        //     printf("%d ", weights[i]);
+        // }
         printf("\n");
         vTaskDelay(TX_DELAY);
+    }
+}
+
+void print_st(void)
+{
+    printf("%d\n", info_file.current_index);
+    for (int i = 0; i < CONFIG_MAX_INFO_VALUES; i++)
+    {
+        printf("%d %d\n", info_file.info_file_cell[i].unix_time,
+               info_file.info_file_cell[i].weight_at_time);
     }
 }
 
@@ -147,21 +157,12 @@ void save_data_task(void *args)
                 info_file.current_index = 0;
             }
             ds1302_get_time(&rtc_dev, &time_struct);
-            char *time_str = asctime(&time_struct);
-
+            info_file.info_file_cell[info_file.current_index].unix_time = mktime(&time_struct);
             info_file.info_file_cell[info_file.current_index].weight_at_time = current_weight;
             info_file.current_index++;
 
-            char struct_buffer[serialization_buffer_size];
-            serialize_info_struct(&info_file, struct_buffer);
-            // deserialize_info_struct(&info_file, struct_buffer);
-
-            // printf("%d <<<<\n", info_file.current_index);
-            // for (int i = 0; i < CONFIG_MAX_INFO_VALUES; i++)
-            // {
-            //     printf("%d <<<<\n", info_file.info_file_cell[i].weight_at_time);
-            // }
-            write_file(info_file_name, struct_buffer);
+            write_bin_file();
+            print_st();
             last_weight = current_weight;
         }
         vTaskDelay(CONFIG_SAVE_DATA_DELAY);
@@ -174,8 +175,9 @@ void app_main(void)
     init_uart();
     ds1302_init(&rtc_dev);
     ds1302_start(&rtc_dev, true);
-    write_file(info_file_name, "llll");
 
+    read_bin_file();
+    print_st();
     xTaskCreate(rx_task, "uart_rx_task", 1024 * 2, NULL, configMAX_PRIORITIES, NULL);
     xTaskCreate(save_data_task, "save_data_task", 1024 * 2, NULL, configMAX_PRIORITIES, NULL);
 }
