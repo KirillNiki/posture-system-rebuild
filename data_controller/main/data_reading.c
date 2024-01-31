@@ -4,6 +4,7 @@
 #include "driver/uart.h"
 #include "driver/gpio.h"
 #include "driver/adc.h"
+#include "math.h"
 
 #include "esp_adc_cal.h"
 #include "freertos/task.h"
@@ -21,7 +22,8 @@ static void read_data(void)
     for (int i = 0; i < gpios_num; i++)
     {
         int value = read_adc(channel_infos[i]);
-        int function_val = 1.8567 * value - 281.4006;
+        // int function_val = 1.8567 * value - 281.4006;
+        int function_val = pow(2.72, 6.3288 + 0.0009 * value) - 562;
         int result_val = function_val >= 0 ? function_val : 0;
         snprintf(temp_digit, temp_dig_str_len, "%d,", result_val);
         strcat(serial_string, temp_digit);

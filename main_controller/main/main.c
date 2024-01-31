@@ -23,10 +23,10 @@
 #include "ds1302/ds1302.h"
 #include "data_interface.h"
 
-long sitting_timer = 0;
-long not_sitting_timer = 0;
-long current_weight = 0;
-long last_weight = 0;
+int sitting_timer = 0;
+int not_sitting_timer = 0;
+int current_weight = 0;
+int last_weight = 0;
 int weights[gpios_num];
 
 struct tm time_struct;
@@ -35,7 +35,6 @@ ds1302_t rtc_dev = {
     .io_pin = CONFIG_IO_PIN,
     .sclk_pin = CONFIG_SCLK_PIN,
 };
-
 struct Info_file_struct info_file;
 
 void sitting_timer_change()
@@ -123,14 +122,6 @@ void rx_task(void *args)
         }
         ds1302_get_time(&rtc_dev, &time_struct);
         sitting_timer_change();
-
-        // char *time = asctime(&time_struct);
-        // printf("%s", time);
-        // for (int i = 0; i < gpios_num; i++)
-        // {
-        //     printf("%d ", weights[i]);
-        // }
-        printf("\n");
         vTaskDelay(TX_DELAY);
     }
 }
@@ -149,9 +140,14 @@ void save_data_task(void *args)
 {
     while (true)
     {
-        if (abs(current_weight - last_weight) > CONFIG_MIN_WEIGHTS_DIFF)
+        printf("%d : %d\n", current_weight, last_weight);
+        printf("%d\n", abs(current_weight - last_weight));
+        printf("%d\n", CONFIG_MIN_WEIGHTS_DIFF);
+        printf("%d\n", abs(current_weight - last_weight) > CONFIG_MIN_WEIGHTS_DIFF);
+        
+        if (abs(current_weight - last_weight) > CONFIG_MIN_WEIGHTS_DIFF && current_weight != 0)
         {
-            printf("test >>>>\n");
+            last_weight = current_weight;
             if (info_file.current_index == CONFIG_MAX_INFO_VALUES)
             {
                 info_file.current_index = 0;
@@ -163,7 +159,6 @@ void save_data_task(void *args)
 
             write_bin_file();
             print_st();
-            last_weight = current_weight;
         }
         vTaskDelay(CONFIG_SAVE_DATA_DELAY);
     }
