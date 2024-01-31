@@ -126,7 +126,7 @@ void rx_task(void *args)
     }
 }
 
-void print_st(void)
+void print_struct(void)
 {
     printf("%d\n", info_file.current_index);
     for (int i = 0; i < CONFIG_MAX_INFO_VALUES; i++)
@@ -140,11 +140,6 @@ void save_data_task(void *args)
 {
     while (true)
     {
-        printf("%d : %d\n", current_weight, last_weight);
-        printf("%d\n", abs(current_weight - last_weight));
-        printf("%d\n", CONFIG_MIN_WEIGHTS_DIFF);
-        printf("%d\n", abs(current_weight - last_weight) > CONFIG_MIN_WEIGHTS_DIFF);
-        
         if (abs(current_weight - last_weight) > CONFIG_MIN_WEIGHTS_DIFF && current_weight != 0)
         {
             last_weight = current_weight;
@@ -158,7 +153,7 @@ void save_data_task(void *args)
             info_file.current_index++;
 
             write_bin_file();
-            print_st();
+            print_struct();
         }
         vTaskDelay(CONFIG_SAVE_DATA_DELAY);
     }
@@ -172,7 +167,6 @@ void app_main(void)
     ds1302_start(&rtc_dev, true);
 
     read_bin_file();
-    print_st();
     xTaskCreate(rx_task, "uart_rx_task", 1024 * 2, NULL, configMAX_PRIORITIES, NULL);
     xTaskCreate(save_data_task, "save_data_task", 1024 * 2, NULL, configMAX_PRIORITIES, NULL);
 }
