@@ -166,10 +166,11 @@ void save_data_task(void *args)
 
 void app_main(void)
 {
-    init_server();
+    init_spiffs();
     init_uart();
     ds1302_init(&rtc_dev);
     ds1302_start(&rtc_dev, true);
+    init_server();
 
     read_bin_file();
     xTaskCreate(rx_task, "uart_rx_task", 1024 * 2, NULL, configMAX_PRIORITIES, NULL);
