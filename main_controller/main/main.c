@@ -23,6 +23,8 @@
 #include "ds1302/ds1302.h"
 #include "data_interface.h"
 
+bool is_synchronized = false;
+bool is_train = false;
 int sitting_timer = 0;
 int not_sitting_timer = 0;
 int current_weight = 0;
@@ -39,30 +41,33 @@ struct Info_file_struct info_file;
 
 void sitting_timer_change()
 {
-    int sitting_counter = 0;
-    bool is_sitting = false;
-    for (int i = 0; i < gpios_num; i++)
+    if (is_train == false)
     {
-        if (weights[i] > CONFIG_COUNTABLE_WEIGHT)
+        int sitting_counter = 0;
+        bool is_sitting = false;
+        for (int i = 0; i < gpios_num; i++)
         {
-            sitting_counter++;
+            if (weights[i] > CONFIG_COUNTABLE_WEIGHT)
+            {
+                sitting_counter++;
+            }
+            if (sitting_counter >= CONFIG_MIN_COUNTABLE_WEIGHTS)
+            {
+                is_sitting = true;
+                break;
+            }
         }
-        if (sitting_counter >= CONFIG_MIN_COUNTABLE_WEIGHTS)
+        if (is_sitting == false)
         {
-            is_sitting = true;
-            break;
+            if ((int)mktime(&time_struct) - not_sitting_timer >= CONFIG_MAX_NOT_SIT_TIME)
+            {
+                sitting_timer = (int)mktime(&time_struct);
+            }
         }
-    }
-    if (is_sitting == false)
-    {
-        if ((int)mktime(&time_struct) - not_sitting_timer >= CONFIG_MAX_NOT_SIT_TIME)
+        else
         {
-            sitting_timer = (int)mktime(&time_struct);
+            not_sitting_timer = (int)mktime(&time_struct);
         }
-    }
-    else
-    {
-        not_sitting_timer = (int)mktime(&time_struct);
     }
 }
 

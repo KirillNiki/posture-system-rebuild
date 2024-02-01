@@ -1,4 +1,5 @@
 
+#include "string.h"
 #include <esp_wifi.h>
 #include <esp_event.h>
 #include <esp_log.h>
@@ -12,7 +13,9 @@
 #include "esp_tls.h"
 #include "sdkconfig.h"
 #include "cJSON.h"
+#include <time.h>
 
+#include "ds1302/ds1302.h"
 #include "wifi/wifi.h"
 #include "spiffs/spiffs.h"
 #include "server.h"
@@ -69,10 +72,63 @@ static esp_err_t data_handler(httpd_req_t *req)
     cJSON *weights_json = cJSON_CreateIntArray(weights, gpios_num);
     cJSON_AddItemToObject(root, "weights", weights_json);
 
+    cJSON *sitting_timer_json = cJSON_CreateNumber((double)sitting_timer);
+    cJSON_AddItemToObject(root, "sittingTimer", sitting_timer_json);
+
+    cJSON *infos_json = cJSON_CreateArray();
+    for (int i = 0; i < CONFIG_MAX_INFO_VALUES; i++)
+    {
+        cJSON *info_part = cJSON_CreateObject();
+        cJSON *time = cJSON_CreateNumber((double)info_file.info_file_cell[i].unix_time);
+        cJSON *weight = cJSON_CreateNumber((double)info_file.info_file_cell[i].weight_at_time);
+        cJSON_AddItemToObject(info_part, "time", time);
+        cJSON_AddItemToObject(info_part, "weight", weight);
+
+        cJSON_AddItemToArray(infos_json, info_part);
+    }
+    cJSON_AddItemToObject(root, "infoData", infos_json);
+
     char *json_string = cJSON_Print(root);
     httpd_resp_send(req, json_string, HTTPD_RESP_USE_STRLEN);
     cJSON_Delete(root);
     cJSON_free(json_string);
+    return ESP_OK;
+}
+
+static esp_err_t time_handler(httpd_req_t *req)
+{
+    if (is_synchronized == false)
+    {
+        char unix_seconds[100];
+        struct tm time;
+        size_t recv_size = MIN(req->content_len, sizeof(unix_seconds));
+        int ret = httpd_req_recv(req, unix_seconds, recv_size);
+        time_t unix_int = (time_t)atoi(unix_seconds);
+
+        if (ret <= 0)
+        {
+            ESP_LOGE(TAG, "Error parsing post request!");
+        }
+        memcpy(&time, localtime(&unix_int), sizeof(struct tm));
+        ds1302_set_time(&rtc_dev, &time);
+        memset(&time, 0, sizeof(struct tm));
+        memset(unix_seconds, 0, sizeof(unix_seconds));
+        is_synchronized = true;
+    }
+    httpd_resp_send(req, "", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+static esp_err_t train_handler(httpd_req_t *req)
+{
+    is_train = !is_train;
+    if (is_train == false)
+    {
+        struct tm time;
+        ds1302_get_time(&rtc_dev, &time);
+        sitting_timer = mktime(&time);
+    }
+    main_handler(req);
     return ESP_OK;
 }
 
@@ -86,6 +142,18 @@ static const httpd_uri_t data_uri = {
     .uri = "/data",
     .method = HTTP_GET,
     .handler = data_handler,
+};
+
+static const httpd_uri_t watch_uri = {
+    .uri = "/watchTime",
+    .method = HTTP_POST,
+    .handler = time_handler,
+};
+
+static const httpd_uri_t train_uri = {
+    .uri = "/train",
+    .method = HTTP_GET,
+    .handler = train_handler,
 };
 
 static httpd_handle_t start_webserver(void)
@@ -115,6 +183,8 @@ static httpd_handle_t start_webserver(void)
     }
     httpd_register_uri_handler(server, &main_uri);
     httpd_register_uri_handler(server, &data_uri);
+    httpd_register_uri_handler(server, &watch_uri);
+    httpd_register_uri_handler(server, &train_uri);
 
     int index = 0;
     for (int i = 0; i < file_count; i++)
