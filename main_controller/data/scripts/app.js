@@ -3,14 +3,13 @@ const factor = 34;
 let isWMMode = false;
 
 
-let date = new Date();
 fetch('watchTime', {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-        "time": date.getTime(),
+        "time": Math.floor((new Date(Date.now())).getTime() / 1000),
     }),
 }).catch((error) => {
     console.log(error);
@@ -24,11 +23,22 @@ async function getData() {
 
     data.allValuesSum = 0;
     for (let i = 0; i < data.weights.length; i++) {
-        console.log(data.weights[i]);
         data.allValuesSum += parseInt(data.weights[i]);
     }
     data.valuePerPersent = data.allValuesSum / 100;
     data.currentWeight = TwoMaxAvarage() * factor;
+    data.sittingTimer = data.sittingTimer * 1000
+
+    for (var i = 0; i < data.infoData.length; i++) {
+        data.infoData[i].time = data.infoData[i].time * 1000
+        if (data.infoData[i].time != 0) {
+            var weight_date = new Date(data.infoData[i].time);
+            data.infoData[i].time_string = `${weight_date.getDate()}-${weight_date.getMonth()} ${weight_date.getHours()}:${weight_date.getMinutes()}`
+        }
+        else {
+            data.infoData[i].time_string = ``
+        }
+    }
 }
 
 setInterval(async () => {
@@ -151,6 +161,7 @@ let rotated = true;
 function ChartChanging() {
     const canvas = document.getElementById("chart");
     const chartCanvas = canvas.getContext("2d");
+    chartCanvas.clearRect(0, 0, canvas.width, canvas.height);
     // chartCanvas.clearRect(-100, -100, canvas.width + 100, canvas.height + 100);
 
     if (!rotated) {
@@ -206,7 +217,7 @@ function ChartChanging() {
     // print time
     for (let i = 0; i < data.infoData.length; i++) {
         let timeCounter = i.toString().length === 1 ? `0` + i.toString() : i.toString();
-        chartCanvas.fillText(`t${timeCounter} ${data.infoData[i].time}`, -100, 156 + (i * 40));
+        chartCanvas.fillText(`t${timeCounter} ${data.infoData[i].time_string}`, -100, 156 + (i * 40));
     }
 
 

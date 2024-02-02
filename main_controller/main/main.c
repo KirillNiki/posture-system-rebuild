@@ -125,6 +125,13 @@ void rx_task(void *args)
         {
             calculate_weight();
         }
+        else
+        {
+            for (int i = 0; i < gpios_num; i++)
+            {
+                weights[i] = 0;
+            }
+        }
         ds1302_get_time(&rtc_dev, &time_struct);
         sitting_timer_change();
         vTaskDelay(TX_DELAY);
@@ -153,6 +160,8 @@ void save_data_task(void *args)
                 info_file.current_index = 0;
             }
             ds1302_get_time(&rtc_dev, &time_struct);
+
+            printf("%s\n", asctime(&time_struct));
             info_file.info_file_cell[info_file.current_index].unix_time = mktime(&time_struct);
             info_file.info_file_cell[info_file.current_index].weight_at_time = current_weight;
             info_file.current_index++;

@@ -76,15 +76,21 @@ static esp_err_t data_handler(httpd_req_t *req)
     cJSON_AddItemToObject(root, "sittingTimer", sitting_timer_json);
 
     cJSON *infos_json = cJSON_CreateArray();
+    int index = info_file.current_index;
     for (int i = 0; i < CONFIG_MAX_INFO_VALUES; i++)
     {
+        if (index == CONFIG_MAX_INFO_VALUES)
+        {
+            index = 0;
+        }
         cJSON *info_part = cJSON_CreateObject();
-        cJSON *time = cJSON_CreateNumber((double)info_file.info_file_cell[i].unix_time);
-        cJSON *weight = cJSON_CreateNumber((double)info_file.info_file_cell[i].weight_at_time);
+        cJSON *time = cJSON_CreateNumber((double)info_file.info_file_cell[index].unix_time);
+        cJSON *weight = cJSON_CreateNumber((double)info_file.info_file_cell[index].weight_at_time);
         cJSON_AddItemToObject(info_part, "time", time);
         cJSON_AddItemToObject(info_part, "weight", weight);
 
         cJSON_AddItemToArray(infos_json, info_part);
+        index++;
     }
     cJSON_AddItemToObject(root, "infoData", infos_json);
 
@@ -95,22 +101,55 @@ static esp_err_t data_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+void recursively_parse_JSON(cJSON *json)
+{
+    cJSON *component;
+    cJSON_ArrayForEach(component, json)
+    {
+        printf(">>>>>looooh\n");
+        if (cJSON_IsNumber(component))
+        {
+            printf("%s: %d\n", component->string, component->valueint);
+        }
+        // if (!cJSON_IsString(component) && !cJSON_IsNumber(component))
+        // {
+        //     recursively_parse_JSON(component);
+        // }
+        // else
+        // {
+        //     // Do something with the data
+        //     printf("%s: %s\n", component->string, component->valuestring);
+        // }
+    }
+}
+
 static esp_err_t time_handler(httpd_req_t *req)
 {
     if (is_synchronized == false)
     {
-        char unix_seconds[100];
         struct tm time;
+        char unix_seconds[100];
+        memset(unix_seconds, 0, sizeof(unix_seconds));
         size_t recv_size = MIN(req->content_len, sizeof(unix_seconds));
         int ret = httpd_req_recv(req, unix_seconds, recv_size);
-        time_t unix_int = (time_t)atoi(unix_seconds);
 
         if (ret <= 0)
         {
             ESP_LOGE(TAG, "Error parsing post request!");
         }
-        memcpy(&time, localtime(&unix_int), sizeof(struct tm));
+        time_t time_val = 0;
+        cJSON *req_json = cJSON_Parse(unix_seconds);
+        cJSON *component_json;
+        cJSON_ArrayForEach(component_json, req_json)
+        {
+            if (strcoll(component_json->string, "time:"))
+            {
+                time_val = (time_t)component_json->valueint;
+            }
+        }
+        memcpy(&time, localtime((&time_val)), sizeof(struct tm));
         ds1302_set_time(&rtc_dev, &time);
+
         memset(&time, 0, sizeof(struct tm));
         memset(unix_seconds, 0, sizeof(unix_seconds));
         is_synchronized = true;

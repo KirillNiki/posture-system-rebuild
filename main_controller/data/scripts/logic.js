@@ -95,16 +95,17 @@ function CountCurrentState() {
 function CountTimesADayHour() {
   let hourCount = 0;
   let dayCount = 0;
+  var cur_date = new Date(Date.now())
 
   for (let i = 0; i < data.infoData.length; i++) {
+    var info_date = new Date(data.infoData[i].time)
 
-    let currentHour = date.getHours();
-    console.log(Number(data.infoData[i].time.slice(7, 9)))
-
-    if (currentHour - Number(data.infoData[i].time.slice(7, 9)) <= 1)
-      hourCount++;
-    if (data.infoData[i].time.length > 0)
+    if (cur_date.getDate() == info_date.getDate()) {
+      if (cur_date.getHours() - info_date.getHours() <= 1) {
+        hourCount++;
+      }
       dayCount++;
+    }
   }
   ChangingTimesDayHour(dayCount, hourCount);
 }
@@ -117,9 +118,15 @@ function CountMinMaxVals() {
   let lastMin = minVal;
 
   for (let i = 1; i < data.infoData.length; i++) {
+    if (data.infoData[i].weight === 0) {
+      continue
+    }
     maxVal = Math.max(maxVal, data.infoData[i].weight);
-
     minVal = Math.min(minVal, data.infoData[i].weight);
+    if (minVal === 0) {
+      minVal = data.infoData[i].weight
+    }
+
     if (lastMin !== 0 && minVal === 0) {
       minVal = lastMin
     }
