@@ -16,11 +16,17 @@ fetch('watchTime', {
 });
 
 
-let data; // { weights, infoData, allValuesSum, valuePerPersent }
-async function getData() {
-    let dataHeaders = await fetch(`data`);
-    data = await dataHeaders.json();
+let data = {
+    "weights": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    "infoData": [],
+    "allValuesSum": 0,
+    "valuePerPersent": 0
+}
+for (var i = 0; i < 12; i++) {
+    data.infoData.push({ "time": 0, "weight": 0 })
+}
 
+function setupData() {
     data.allValuesSum = 0;
     for (let i = 0; i < data.weights.length; i++) {
         data.allValuesSum += parseInt(data.weights[i]);
@@ -41,9 +47,14 @@ async function getData() {
     }
 }
 
-setInterval(async () => {
-    await getData();
+async function getData() {
+    let dataHeaders = await fetch(`data`);
+    data = await dataHeaders.json();
+    setupData()
+}
 
+setInterval(async () => {
+    setupData();
     CountRowValues();
     CountSensorTable();
     CountCurrentState();
@@ -53,6 +64,7 @@ setInterval(async () => {
     ChartChanging();
 
     ChangeCurrentWeight();
+    await getData();
     await Train();
 }, 2000);
 

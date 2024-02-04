@@ -1,3 +1,4 @@
+
 const staticDevCache = 'dev-posture-controll-sys-v1'
 const assets = [
     '/',
@@ -11,7 +12,6 @@ const assets = [
     '/icons/logo.svg',
 ]
 
-
 self.addEventListener("install", installEvent => {
     installEvent.waitUntil(
         caches.open(staticDevCache).then(cache => {
@@ -19,7 +19,6 @@ self.addEventListener("install", installEvent => {
         })
     )
 })
-
 
 self.addEventListener("fetch", fetchEvent => {
     fetchEvent.respondWith(
