@@ -24,6 +24,14 @@
 static const char *TAG = "my_server";
 static httpd_uri_t file_uris[file_count - 1]; // not for main file
 
+static int set_cors_headers(httpd_req_t *req)
+{
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", CONFIG_CORS_ACCESS_ORIGIN);
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "GET, HEAD, POST, OPTIONS");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Content-type");
+    return ESP_OK;
+}
+
 static esp_err_t main_handler(httpd_req_t *req)
 {
     char buffer[buffer_size];
@@ -68,6 +76,11 @@ static esp_err_t file_handler(httpd_req_t *req)
 
 static esp_err_t data_handler(httpd_req_t *req)
 {
+    char buffer[100];
+    memset(buffer, 1, sizeof(buffer));
+    httpd_req_get_hdr_value_str(req, "referer", buffer, sizeof(buffer));
+    printf("req referrer >>> %s\n", buffer);
+
     cJSON *root = cJSON_CreateObject();
     cJSON *weights_json = cJSON_CreateIntArray(weights, gpios_num);
     cJSON_AddItemToObject(root, "weights", weights_json);
@@ -95,32 +108,19 @@ static esp_err_t data_handler(httpd_req_t *req)
     cJSON_AddItemToObject(root, "infoData", infos_json);
 
     char *json_string = cJSON_Print(root);
+    set_cors_headers(req);
     httpd_resp_send(req, json_string, HTTPD_RESP_USE_STRLEN);
+
     cJSON_Delete(root);
     cJSON_free(json_string);
     return ESP_OK;
 }
 
-void recursively_parse_JSON(cJSON *json)
+static esp_err_t time_options_handler(httpd_req_t *req)
 {
-    cJSON *component;
-    cJSON_ArrayForEach(component, json)
-    {
-        printf(">>>>>looooh\n");
-        if (cJSON_IsNumber(component))
-        {
-            printf("%s: %d\n", component->string, component->valueint);
-        }
-        // if (!cJSON_IsString(component) && !cJSON_IsNumber(component))
-        // {
-        //     recursively_parse_JSON(component);
-        // }
-        // else
-        // {
-        //     // Do something with the data
-        //     printf("%s: %s\n", component->string, component->valuestring);
-        // }
-    }
+    set_cors_headers(req);
+    httpd_resp_send(req, "", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
 }
 
 static esp_err_t time_handler(httpd_req_t *req)
@@ -154,6 +154,7 @@ static esp_err_t time_handler(httpd_req_t *req)
         memset(unix_seconds, 0, sizeof(unix_seconds));
         is_synchronized = true;
     }
+    set_cors_headers(req);
     httpd_resp_send(req, "", HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
@@ -167,6 +168,7 @@ static esp_err_t train_handler(httpd_req_t *req)
         ds1302_get_time(&rtc_dev, &time);
         sitting_timer = mktime(&time);
     }
+    set_cors_headers(req);
     main_handler(req);
     return ESP_OK;
 }
@@ -183,6 +185,12 @@ static const httpd_uri_t data_uri = {
     .handler = data_handler,
 };
 
+static const httpd_uri_t watch_options_uri = {
+    .uri = "/watchTime",
+    .method = HTTP_OPTIONS,
+    .handler = time_options_handler,
+};
+
 static const httpd_uri_t watch_uri = {
     .uri = "/watchTime",
     .method = HTTP_POST,
@@ -195,12 +203,21 @@ static const httpd_uri_t train_uri = {
     .handler = train_handler,
 };
 
+esp_err_t not_found_handler(httpd_req_t *req, httpd_err_code_t error)
+{
+    printf("not found >>>>>> %s\n", req->uri);
+    return ESP_OK;
+}
+
 static httpd_handle_t start_webserver(void)
 {
     httpd_handle_t server = NULL;
     httpd_ssl_config_t config = HTTPD_SSL_CONFIG_DEFAULT();
+    // httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+
     config.httpd.stack_size = httpd_stack_size;
     config.httpd.max_uri_handlers = max_handlers;
+    config.httpd.server_port = 80;
 
     /* Load server certificate */
     extern const unsigned char servercert_start[] asm("_binary_cacert_pem_start");
@@ -215,13 +232,17 @@ static httpd_handle_t start_webserver(void)
     config.prvtkey_len = prvtkey_pem_end - prvtkey_pem_start;
 
     esp_err_t ret = httpd_ssl_start(&server, &config);
+    // esp_err_t ret = httpd_start(&server, &config);
     if (ret != ESP_OK)
     {
         ESP_LOGI(TAG, "Error starting server!");
         return NULL;
     }
+    httpd_register_err_handler(server, HTTPD_404_NOT_FOUND, &not_found_handler);
+
     httpd_register_uri_handler(server, &main_uri);
     httpd_register_uri_handler(server, &data_uri);
+    httpd_register_uri_handler(server, &watch_options_uri);
     httpd_register_uri_handler(server, &watch_uri);
     httpd_register_uri_handler(server, &train_uri);
 
@@ -240,6 +261,7 @@ static httpd_handle_t start_webserver(void)
         httpd_register_uri_handler(server, &file_uris[index]);
         index++;
     }
+
     return server;
 }
 

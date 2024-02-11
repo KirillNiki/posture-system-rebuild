@@ -52,6 +52,10 @@ menu "MY_RTC_Config"
 endmenu
 
 menu "MY_POSTURE_SYS_CONFIG"
+    config CORS_ACCESS_ORIGIN
+        string "CORS_ACCESS_ORIGIN"
+        default "https://localhost:2007"
+
     config WEIGTH_FACTOR
         int WEIGTH_FACTOR
         default 34

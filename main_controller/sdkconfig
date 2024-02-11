@@ -1,6 +1,6 @@
 #
 # Automatically generated file. DO NOT EDIT.
-# Espressif IoT Development Framework (ESP-IDF) 5.1.2 Project Configuration
+# Espressif IoT Development Framework (ESP-IDF)  Project Configuration
 #
 CONFIG_SOC_BROWNOUT_RESET_SUPPORTED="Not determined"
 CONFIG_SOC_TWAI_BRP_DIV_SUPPORTED="Not determined"
@@ -425,6 +425,7 @@ CONFIG_IO_PIN=4
 #
 # MY_POSTURE_SYS_CONFIG
 #
+CONFIG_CORS_ACCESS_ORIGIN="https://localhost:2007"
 CONFIG_WEIGTH_FACTOR=34
 CONFIG_COUNTABLE_WEIGHT=400
 CONFIG_MIN_COUNTABLE_WEIGHTS=4
