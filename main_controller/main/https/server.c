@@ -79,7 +79,6 @@ static esp_err_t data_handler(httpd_req_t *req)
     char buffer[100];
     memset(buffer, 1, sizeof(buffer));
     httpd_req_get_hdr_value_str(req, "referer", buffer, sizeof(buffer));
-    printf("req referrer >>> %s\n", buffer);
 
     cJSON *root = cJSON_CreateObject();
     cJSON *weights_json = cJSON_CreateIntArray(weights, gpios_num);
