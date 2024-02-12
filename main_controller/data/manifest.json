@@ -1,22 +1,25 @@
 {
-    "name": "posture-controll",
-    "short_name": "posture-controll",
+    "name": "posture-system",
+    "short_name": "posture-system",
     "lang": "en",
     "start_url": "index.html",
     "display": "standalone",
     "background_color": "blue",
-    "orientation": "portrait-primary",
+    "orientation": "landscape",
     "icons": [
         {
             "src": "/icons/logo-192.png",
+            "type": "image/png",
             "sizes": "192x192"
         },
         {
             "src": "/icons/logo-512.png",
+            "type": "image/png",
             "sizes": "512x512"
         },
         {
             "src": "/icons/logo.svg",
+            "type": "image/svg+xml",
             "sizes": "513x513"
         }
     ]

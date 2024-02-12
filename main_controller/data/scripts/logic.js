@@ -161,7 +161,7 @@ async function Train() {
     trainStarted = true;
     stand = true;
 
-    await fetch(`train`);
+    await fetch(`${ip_addr}train`);
     sittingTimer = 0;
   }
 
@@ -198,7 +198,7 @@ async function Train() {
     trainObj.classList.add('hidden');
   }
   if (trainCounter == 6) {
-    await fetch(`train`);
+    await fetch(`${ip_addr}train`);
   }
 }
 

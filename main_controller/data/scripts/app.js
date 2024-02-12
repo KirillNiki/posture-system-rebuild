@@ -1,9 +1,12 @@
+const ip_addr = `https://192.168.0.1/`
+
+
 const ButtonState = { enter: 'enter', exit: 'exit' };
 const factor = 34;
 let isWMMode = false;
 
 
-fetch('watchTime', {
+fetch(`${ip_addr}watchTime`, {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json'
@@ -48,7 +51,7 @@ function setupData() {
 }
 
 async function getData() {
-    let dataHeaders = await fetch(`data`);
+    let dataHeaders = await fetch(`${ip_addr}data`);
     data = await dataHeaders.json();
     setupData()
 }
