@@ -8,6 +8,7 @@ let isWMMode = false;
 
 fetch(`${ip_addr}watchTime`, {
     method: 'POST',
+    mode: 'cors',
     headers: {
         'Content-Type': 'application/json'
     },
@@ -51,7 +52,7 @@ function setupData() {
 }
 
 async function getData() {
-    let dataHeaders = await fetch(`${ip_addr}data`);
+    let dataHeaders = await fetch(`${ip_addr}data`, { mode: 'cors' });
     data = await dataHeaders.json();
     setupData()
 }

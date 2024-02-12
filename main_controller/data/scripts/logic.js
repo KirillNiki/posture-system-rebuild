@@ -161,7 +161,7 @@ async function Train() {
     trainStarted = true;
     stand = true;
 
-    await fetch(`${ip_addr}train`);
+    await fetch(`${ip_addr}train`, { mode: 'cors' });
     sittingTimer = 0;
   }
 
@@ -198,7 +198,7 @@ async function Train() {
     trainObj.classList.add('hidden');
   }
   if (trainCounter == 6) {
-    await fetch(`${ip_addr}train`);
+    await fetch(`${ip_addr}train`, { mode: 'cors' });
   }
 }
 
