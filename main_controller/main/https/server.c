@@ -26,9 +26,11 @@ static httpd_uri_t file_uris[file_count - 1]; // not for main file
 
 static int set_cors_headers(httpd_req_t *req)
 {
+    printf("%s : .... %s\n", req->uri, CONFIG_CORS_ACCESS_ORIGIN);
     httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", CONFIG_CORS_ACCESS_ORIGIN);
     httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "GET, HEAD, POST, OPTIONS");
     httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Content-type");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Private-Network", "true");
     return ESP_OK;
 }
 
@@ -36,6 +38,7 @@ static esp_err_t main_handler(httpd_req_t *req)
 {
     char buffer[buffer_size];
     read_my_file(buffer, buffer_size, main_file);
+    printf("%s", buffer);
 
     httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, buffer, HTTPD_RESP_USE_STRLEN);
@@ -81,8 +84,18 @@ static esp_err_t data_handler(httpd_req_t *req)
     httpd_req_get_hdr_value_str(req, "referer", buffer, sizeof(buffer));
 
     cJSON *root = cJSON_CreateObject();
-    cJSON *weights_json = cJSON_CreateIntArray(weights, gpios_num);
+
+
+    cJSON *weights_json = cJSON_CreateArray();
+    for (int i = 0; i < gpios_num; i++)
+    {
+        cJSON *weight = cJSON_CreateObject();
+        cJSON *weight_num = cJSON_CreateNumber(weights[i]);
+        cJSON_AddItemToObject(weight, "weight", weight_num);
+        cJSON_AddItemToArray(weights_json, weight);
+    }
     cJSON_AddItemToObject(root, "weights", weights_json);
+
 
     cJSON *sitting_timer_json = cJSON_CreateNumber((double)sitting_timer);
     cJSON_AddItemToObject(root, "sittingTimer", sitting_timer_json);
@@ -99,7 +112,7 @@ static esp_err_t data_handler(httpd_req_t *req)
         cJSON *time = cJSON_CreateNumber((double)info_file.info_file_cell[index].unix_time);
         cJSON *weight = cJSON_CreateNumber((double)info_file.info_file_cell[index].weight_at_time);
         cJSON_AddItemToObject(info_part, "time", time);
-        cJSON_AddItemToObject(info_part, "weight", weight);
+        cJSON_AddItemToObject(info_part, "value", weight);
 
         cJSON_AddItemToArray(infos_json, info_part);
         index++;
@@ -112,13 +125,6 @@ static esp_err_t data_handler(httpd_req_t *req)
 
     cJSON_Delete(root);
     cJSON_free(json_string);
-    return ESP_OK;
-}
-
-static esp_err_t time_options_handler(httpd_req_t *req)
-{
-    set_cors_headers(req);
-    httpd_resp_send(req, "", HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
@@ -172,6 +178,13 @@ static esp_err_t train_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+static esp_err_t options_handler(httpd_req_t *req)
+{
+    set_cors_headers(req);
+    httpd_resp_send(req, "", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
 static const httpd_uri_t main_uri = {
     .uri = "/",
     .method = HTTP_GET,
@@ -184,12 +197,6 @@ static const httpd_uri_t data_uri = {
     .handler = data_handler,
 };
 
-static const httpd_uri_t watch_options_uri = {
-    .uri = "/watchTime",
-    .method = HTTP_OPTIONS,
-    .handler = time_options_handler,
-};
-
 static const httpd_uri_t watch_uri = {
     .uri = "/watchTime",
     .method = HTTP_POST,
@@ -200,6 +207,24 @@ static const httpd_uri_t train_uri = {
     .uri = "/train",
     .method = HTTP_GET,
     .handler = train_handler,
+};
+
+static const httpd_uri_t data_options_uri = {
+    .uri = "/data",
+    .method = HTTP_OPTIONS,
+    .handler = options_handler,
+};
+
+static const httpd_uri_t watch_options_uri = {
+    .uri = "/watchTime",
+    .method = HTTP_OPTIONS,
+    .handler = options_handler,
+};
+
+static const httpd_uri_t train_options_uri = {
+    .uri = "/train",
+    .method = HTTP_OPTIONS,
+    .handler = options_handler,
 };
 
 esp_err_t not_found_handler(httpd_req_t *req, httpd_err_code_t error)
@@ -241,9 +266,12 @@ static httpd_handle_t start_webserver(void)
 
     httpd_register_uri_handler(server, &main_uri);
     httpd_register_uri_handler(server, &data_uri);
-    httpd_register_uri_handler(server, &watch_options_uri);
     httpd_register_uri_handler(server, &watch_uri);
     httpd_register_uri_handler(server, &train_uri);
+
+    httpd_register_uri_handler(server, &watch_options_uri);
+    httpd_register_uri_handler(server, &data_options_uri);
+    httpd_register_uri_handler(server, &train_options_uri);
 
     int index = 0;
     for (int i = 0; i < file_count; i++)
