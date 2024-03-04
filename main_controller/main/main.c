@@ -25,7 +25,7 @@
 
 bool is_synchronized = false;
 bool is_train = false;
-int sitting_timer = 24000;
+int sitting_timer = 0;
 int not_sitting_timer = 0;
 int current_weight = 0;
 int last_weight = 0;
@@ -176,7 +176,6 @@ void save_data_task(void *args)
 void app_main(void)
 {
     init_spiffs();
-    list_partiotions();
     
     init_uart();
     ds1302_init(&rtc_dev);

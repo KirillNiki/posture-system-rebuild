@@ -1,4 +1,4 @@
-
+#include <stdio.h>
 #include "string.h"
 #include <esp_wifi.h>
 #include <esp_event.h>
@@ -34,25 +34,46 @@ static int set_cors_headers(httpd_req_t *req)
     return ESP_OK;
 }
 
+static esp_err_t send_by_chunks(char *path, httpd_req_t *req)
+{
+    int size = (int)strlen(path);
+    char result_path[8 + size];
+    join_path(result_path, path);
+
+    FILE *file = fopen(result_path, "r");
+    char *buffer = malloc(buffer_size);
+
+    while (1)
+    {
+        size_t n = read_chunk_file(file, buffer, buffer_size);
+        httpd_resp_send_chunk(req, buffer, n);
+        memset(buffer, 0, buffer_size);
+
+        if (n == 0)
+        {
+            break;
+        }
+    }
+    fclose(file);
+    return ESP_OK;
+}
+
 static esp_err_t main_handler(httpd_req_t *req)
 {
-    char buffer[buffer_size];
-    read_my_file(buffer, buffer_size, main_file);
-    printf("%s", buffer);
-
     httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, buffer, HTTPD_RESP_USE_STRLEN);
+    send_by_chunks(main_file, req);
+
+    httpd_resp_set_status(req, "200 OK");
+
     return ESP_OK;
 }
 
 static esp_err_t file_handler(httpd_req_t *req)
 {
     printf("sending: >>>>> %s\n", req->uri);
-    char buffer[buffer_size];
     char *path = (char *)req->uri;
-    read_my_file(buffer, buffer_size, path);
+    char *file_type = strrchr(path, '.');
 
-    char *file_type = strchr(path, '.');
     if (strcmp(file_type, ".css") == 0)
     {
         httpd_resp_set_type(req, "text/css");
@@ -73,7 +94,11 @@ static esp_err_t file_handler(httpd_req_t *req)
     {
         httpd_resp_set_type(req, "image/svg+xml");
     }
-    httpd_resp_send(req, buffer, HTTPD_RESP_USE_STRLEN);
+    send_by_chunks(path, req);
+    memset(path, 0, strlen(path));
+
+    httpd_resp_set_status(req, "200 OK");
+
     return ESP_OK;
 }
 
@@ -85,7 +110,6 @@ static esp_err_t data_handler(httpd_req_t *req)
 
     cJSON *root = cJSON_CreateObject();
 
-
     cJSON *weights_json = cJSON_CreateArray();
     for (int i = 0; i < gpios_num; i++)
     {
@@ -95,7 +119,6 @@ static esp_err_t data_handler(httpd_req_t *req)
         cJSON_AddItemToArray(weights_json, weight);
     }
     cJSON_AddItemToObject(root, "weights", weights_json);
-
 
     cJSON *sitting_timer_json = cJSON_CreateNumber((double)sitting_timer);
     cJSON_AddItemToObject(root, "sittingTimer", sitting_timer_json);

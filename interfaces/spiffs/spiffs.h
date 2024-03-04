@@ -18,5 +18,7 @@ void write_bin_file(void);
 
 void list_partiotions(void);
 void init_spiffs(void);
+void join_path(char *result_path, char *path);
+size_t read_chunk_file(FILE *file, char *buffer, long size_of_buffer);
 
 #endif

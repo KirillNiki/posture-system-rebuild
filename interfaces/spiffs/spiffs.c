@@ -70,9 +70,27 @@ void read_my_file(char *buffer, long size_of_buffer, char *path)
         return;
     }
     size_t n;
-    n = fread(buffer, 1, size_of_buffer, file);
+    n = fread(buffer, 1, size_of_buffer - 1, file);
     buffer[n] = 0;
     fclose(file);
+}
+
+size_t read_chunk_file(FILE *file, char *buffer, long size_of_buffer)
+{
+    if (sizeof(buffer) == 0)
+    {
+        ESP_LOGE(SPIFFS_TAG, "error: buffer size == 0");
+        return 0;
+    }
+
+    if (file == NULL)
+    {
+        ESP_LOGE(SPIFFS_TAG, "error openning");
+        return 0;
+    }
+    size_t n = fread(buffer, 1, size_of_buffer - 1, file);
+    buffer[n] = 0;
+    return n;
 }
 
 void list_partiotions(void)
