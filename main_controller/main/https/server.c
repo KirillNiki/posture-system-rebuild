@@ -259,27 +259,27 @@ esp_err_t not_found_handler(httpd_req_t *req, httpd_err_code_t error)
 static httpd_handle_t start_webserver(void)
 {
     httpd_handle_t server = NULL;
-    httpd_ssl_config_t config = HTTPD_SSL_CONFIG_DEFAULT();
-    // httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    // httpd_ssl_config_t config = HTTPD_SSL_CONFIG_DEFAULT();
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
-    config.httpd.stack_size = httpd_stack_size;
-    config.httpd.max_uri_handlers = max_handlers;
-    config.httpd.server_port = 80;
+    config.stack_size = httpd_stack_size;
+    config.max_uri_handlers = max_handlers;
+    config.server_port = 80;
 
-    /* Load server certificate */
-    extern const unsigned char servercert_start[] asm("_binary_cacert_pem_start");
-    extern const unsigned char servercert_end[] asm("_binary_cacert_pem_end");
-    config.servercert = servercert_start;
-    config.servercert_len = servercert_end - servercert_start;
+    // /* Load server certificate */
+    // extern const unsigned char servercert_start[] asm("_binary_cacert_pem_start");
+    // extern const unsigned char servercert_end[] asm("_binary_cacert_pem_end");
+    // config.servercert = servercert_start;
+    // config.servercert_len = servercert_end - servercert_start;
 
-    /* Load server private key */
-    extern const unsigned char prvtkey_pem_start[] asm("_binary_prvtkey_pem_start");
-    extern const unsigned char prvtkey_pem_end[] asm("_binary_prvtkey_pem_end");
-    config.prvtkey_pem = prvtkey_pem_start;
-    config.prvtkey_len = prvtkey_pem_end - prvtkey_pem_start;
+    // /* Load server private key */
+    // extern const unsigned char prvtkey_pem_start[] asm("_binary_prvtkey_pem_start");
+    // extern const unsigned char prvtkey_pem_end[] asm("_binary_prvtkey_pem_end");
+    // config.prvtkey_pem = prvtkey_pem_start;
+    // config.prvtkey_len = prvtkey_pem_end - prvtkey_pem_start;
 
-    esp_err_t ret = httpd_ssl_start(&server, &config);
-    // esp_err_t ret = httpd_start(&server, &config);
+    // esp_err_t ret = httpd_ssl_start(&server, &config);
+    esp_err_t ret = httpd_start(&server, &config);
     if (ret != ESP_OK)
     {
         ESP_LOGI(TAG, "Error starting server!");
