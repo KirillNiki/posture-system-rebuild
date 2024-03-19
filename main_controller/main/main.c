@@ -65,6 +65,7 @@ void sitting_timer_change()
             if ((int)mktime(&time_struct) - not_sitting_timer >= CONFIG_MAX_NOT_SIT_TIME)
             {
                 sitting_timer = (int)mktime(&time_struct);
+
             }
         }
         else

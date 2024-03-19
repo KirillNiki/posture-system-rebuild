@@ -23,6 +23,10 @@
 #include "bluetooth_config.h"
 
 #define GATTS_TAG "GATTS_DEMO"
+#define GATT_MAX_ATTR_LEN 500
+
+int data_buffer_offset = 0;
+
 static uint8_t adv_config_done = 0;
 #define adv_config_flag (1 << 0)
 #define scan_rsp_config_flag (1 << 1)
@@ -186,7 +190,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         conn_params.latency = 0;
         conn_params.max_int = 0x20; // max_int = 0x20*1.25ms = 40ms
         conn_params.min_int = 0x10; // min_int = 0x10*1.25ms = 20ms
-        conn_params.timeout = 400;  // timeout = 400*10ms = 4000ms
+        conn_params.timeout = 600;  // timeout = 6000*10ms = 6000ms
         ESP_LOGI(
             GATTS_TAG, "ESP_GATTS_CONNECT_EVT, conn_id %d, remote %02x:%02x:%02x:%02x:%02x:%02x:",
             param->connect.conn_id,
@@ -199,6 +203,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     case ESP_GATTS_DISCONNECT_EVT:
         ESP_LOGI(GATTS_TAG, "ESP_GATTS_DISCONNECT_EVT, disconnect reason 0x%x", param->disconnect.reason);
         esp_ble_gap_start_advertising(&adv_params);
+        data_buffer_offset = 0;
         break;
     case ESP_GATTS_READ_EVT:
     {
@@ -209,21 +214,33 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
 
         for (int i = 0; i < CHARS_NUM; i++)
         {
-            if (param->read.handle == gatts_chars[i].handle)
+            if (param->read.handle == gatts_chars[i].handle && strcmp(gatts_chars[i].definition, "data") == 0)
             {
-                printf("%d - %d\n", rsp.attr_value.len, strlen((char *)gatts_chars[i].attr_value.attr_value));
-                // memcpy(rsp.attr_value.value, gatts_chars[i].attr_value.attr_value,
-                //        strlen((char *)gatts_chars[i].attr_value.attr_value));
-                printf("%d\n", rsp.attr_value.len);
-                printf("%s\n", rsp.attr_value.value);
+                int copy_size = GATT_MAX_ATTR_LEN;
+                bool add_end = false;
+                if (strlen((char *)gatts_chars[i].attr_value.attr_value) - data_buffer_offset <= GATT_MAX_ATTR_LEN)
+                {
+                    copy_size = strlen((char *)gatts_chars[i].attr_value.attr_value) - data_buffer_offset;
+                    add_end = true;
+                }
+
+                memcpy(rsp.attr_value.value, gatts_chars[i].attr_value.attr_value + data_buffer_offset, copy_size);
+                data_buffer_offset += GATT_MAX_ATTR_LEN;
+                rsp.attr_value.len = copy_size;
+                if (add_end)
+                {
+                    strcat((char *)rsp.attr_value.value, "\r");
+                    rsp.attr_value.len += 1;
+                    data_buffer_offset = 0;
+                }
             }
         }
-        // esp_ble_gatts_send_response(
-        //     gatts_if,
-        //     param->read.conn_id,
-        //     param->read.trans_id,
-        //     ESP_GATT_OK,
-        //     &rsp);
+        esp_ble_gatts_send_response(
+            gatts_if,
+            param->read.conn_id,
+            param->read.trans_id,
+            ESP_GATT_OK,
+            &rsp);
         break;
     }
     case ESP_GATTS_WRITE_EVT:
@@ -241,15 +258,13 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
                     memcpy(gatts_chars[i].attr_value.attr_value, param->write.value, param->write.len);
                     gatts_chars[i].attr_value.attr_value[param->write.len] = 0;
 
-                    printf("%s\n", gatts_chars[i].definition);
                     if (strcmp(gatts_chars[i].definition, "train") == 0)
                     {
-                        printf(">>>>>>>>>>>>>1");
                         set_train();
                     }
                     if (strcmp(gatts_chars[i].definition, "time") == 0)
                     {
-                        printf(">>>>>>>>>>>>>2");
+                        printf("%s\n", (char *)gatts_chars[i].attr_value.attr_value);
                         set_time((char *)gatts_chars[i].attr_value.attr_value);
                     }
                 }

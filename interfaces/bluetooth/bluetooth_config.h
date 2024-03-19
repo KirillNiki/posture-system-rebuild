@@ -150,7 +150,7 @@ static struct gatts_char_t gatts_chars[CHARS_NUM] = {
                 .uuid16 = 0xFF02,
             },
         },
-        .perm = ESP_GATT_PERM_WRITE | ESP_GATT_PERM_READ,
+        .perm = ESP_GATT_PERM_WRITE,
         .property = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY,
         .attr_value = {
             .attr_max_len = max_time_buffer,
