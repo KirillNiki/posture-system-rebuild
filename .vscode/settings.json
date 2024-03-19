@@ -2,6 +2,10 @@
     "files.associations": {
         "serializeintrin.h": "c",
         "sdkconfig.h": "c",
-        "esp_err.h": "c"
+        "esp_err.h": "c",
+        "eee": "c",
+        "data_interface.h": "c",
+        "bluetooth_config.h": "c",
+        "bluetooth.h": "c"
     }
 }

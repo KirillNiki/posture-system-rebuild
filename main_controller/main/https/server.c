@@ -20,6 +20,7 @@
 #include "spiffs/spiffs.h"
 #include "server.h"
 #include "data_interface.h"
+#include "data_transer/data_transer.h"
 
 static const char *TAG = "my_server";
 static httpd_uri_t file_uris[file_count - 1]; // not for main file
@@ -108,46 +109,11 @@ static esp_err_t data_handler(httpd_req_t *req)
     memset(buffer, 1, sizeof(buffer));
     httpd_req_get_hdr_value_str(req, "referer", buffer, sizeof(buffer));
 
-    cJSON *root = cJSON_CreateObject();
+    printf("%s\n", json_data_buffer);
 
-    cJSON *weights_json = cJSON_CreateArray();
-    for (int i = 0; i < gpios_num; i++)
-    {
-        cJSON *weight = cJSON_CreateObject();
-        cJSON *weight_num = cJSON_CreateNumber(weights[i]);
-        cJSON_AddItemToObject(weight, "weight", weight_num);
-        cJSON_AddItemToArray(weights_json, weight);
-    }
-    cJSON_AddItemToObject(root, "weights", weights_json);
-
-    cJSON *sitting_timer_json = cJSON_CreateNumber((double)sitting_timer);
-    cJSON_AddItemToObject(root, "sittingTimer", sitting_timer_json);
-
-    cJSON *infos_json = cJSON_CreateArray();
-    int index = info_file.current_index;
-    for (int i = 0; i < CONFIG_MAX_INFO_VALUES; i++)
-    {
-        if (index == CONFIG_MAX_INFO_VALUES)
-        {
-            index = 0;
-        }
-        cJSON *info_part = cJSON_CreateObject();
-        cJSON *time = cJSON_CreateNumber((double)info_file.info_file_cell[index].unix_time);
-        cJSON *weight = cJSON_CreateNumber((double)info_file.info_file_cell[index].weight_at_time);
-        cJSON_AddItemToObject(info_part, "time", time);
-        cJSON_AddItemToObject(info_part, "value", weight);
-
-        cJSON_AddItemToArray(infos_json, info_part);
-        index++;
-    }
-    cJSON_AddItemToObject(root, "infoData", infos_json);
-
-    char *json_string = cJSON_Print(root);
     set_cors_headers(req);
-    httpd_resp_send(req, json_string, HTTPD_RESP_USE_STRLEN);
-
-    cJSON_Delete(root);
-    cJSON_free(json_string);
+    httpd_resp_set_type(req, "text/javascript");
+    httpd_resp_send(req, (char *)json_data_buffer, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
 
@@ -155,32 +121,12 @@ static esp_err_t time_handler(httpd_req_t *req)
 {
     if (is_synchronized == false)
     {
-        struct tm time;
         char unix_seconds[100];
         memset(unix_seconds, 0, sizeof(unix_seconds));
         size_t recv_size = MIN(req->content_len, sizeof(unix_seconds));
         int ret = httpd_req_recv(req, unix_seconds, recv_size);
 
-        if (ret <= 0)
-        {
-            ESP_LOGE(TAG, "Error parsing post request!");
-        }
-        time_t time_val = 0;
-        cJSON *req_json = cJSON_Parse(unix_seconds);
-        cJSON *component_json;
-        cJSON_ArrayForEach(component_json, req_json)
-        {
-            if (strcoll(component_json->string, "time:"))
-            {
-                time_val = (time_t)component_json->valueint;
-            }
-        }
-        memcpy(&time, localtime((&time_val)), sizeof(struct tm));
-        ds1302_set_time(&rtc_dev, &time);
-
-        memset(&time, 0, sizeof(struct tm));
-        memset(unix_seconds, 0, sizeof(unix_seconds));
-        is_synchronized = true;
+        set_time(unix_seconds);
     }
     set_cors_headers(req);
     httpd_resp_send(req, "", HTTPD_RESP_USE_STRLEN);
@@ -189,13 +135,8 @@ static esp_err_t time_handler(httpd_req_t *req)
 
 static esp_err_t train_handler(httpd_req_t *req)
 {
-    is_train = !is_train;
-    if (is_train == false)
-    {
-        struct tm time;
-        ds1302_get_time(&rtc_dev, &time);
-        sitting_timer = mktime(&time);
-    }
+    set_train();
+
     set_cors_headers(req);
     main_handler(req);
     return ESP_OK;
@@ -259,27 +200,27 @@ esp_err_t not_found_handler(httpd_req_t *req, httpd_err_code_t error)
 static httpd_handle_t start_webserver(void)
 {
     httpd_handle_t server = NULL;
-    // httpd_ssl_config_t config = HTTPD_SSL_CONFIG_DEFAULT();
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    httpd_ssl_config_t config = HTTPD_SSL_CONFIG_DEFAULT();
+    // httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
-    config.stack_size = httpd_stack_size;
-    config.max_uri_handlers = max_handlers;
-    config.server_port = 80;
+    config.httpd.stack_size = httpd_stack_size;
+    config.httpd.max_uri_handlers = max_handlers;
+    config.httpd.server_port = 80;
 
-    // /* Load server certificate */
-    // extern const unsigned char servercert_start[] asm("_binary_cacert_pem_start");
-    // extern const unsigned char servercert_end[] asm("_binary_cacert_pem_end");
-    // config.servercert = servercert_start;
-    // config.servercert_len = servercert_end - servercert_start;
+    /* Load server certificate */
+    extern const unsigned char servercert_start[] asm("_binary_cacert_pem_start");
+    extern const unsigned char servercert_end[] asm("_binary_cacert_pem_end");
+    config.servercert = servercert_start;
+    config.servercert_len = servercert_end - servercert_start;
 
-    // /* Load server private key */
-    // extern const unsigned char prvtkey_pem_start[] asm("_binary_prvtkey_pem_start");
-    // extern const unsigned char prvtkey_pem_end[] asm("_binary_prvtkey_pem_end");
-    // config.prvtkey_pem = prvtkey_pem_start;
-    // config.prvtkey_len = prvtkey_pem_end - prvtkey_pem_start;
+    /* Load server private key */
+    extern const unsigned char prvtkey_pem_start[] asm("_binary_prvtkey_pem_start");
+    extern const unsigned char prvtkey_pem_end[] asm("_binary_prvtkey_pem_end");
+    config.prvtkey_pem = prvtkey_pem_start;
+    config.prvtkey_len = prvtkey_pem_end - prvtkey_pem_start;
 
-    // esp_err_t ret = httpd_ssl_start(&server, &config);
-    esp_err_t ret = httpd_start(&server, &config);
+    esp_err_t ret = httpd_ssl_start(&server, &config);
+    // esp_err_t ret = httpd_start(&server, &config);
     if (ret != ESP_OK)
     {
         ESP_LOGI(TAG, "Error starting server!");

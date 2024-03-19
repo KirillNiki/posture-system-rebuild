@@ -22,6 +22,9 @@
 #include "adc/adc.h"
 #include "ds1302/ds1302.h"
 #include "data_interface.h"
+#include "bluetooth/bluetooth.h"
+#include "bluetooth/bluetooth_config.h"
+#include "data_transer/data_transer.h"
 
 bool is_synchronized = false;
 bool is_train = false;
@@ -87,6 +90,8 @@ void calculate_weight(void)
 bool parse_data(void)
 {
     read_bites();
+
+    build_json();
     if (strlen(uart_buffer) == 0)
     {
         return false;
@@ -113,6 +118,7 @@ bool parse_data(void)
         temp_str_index++;
     }
     memset(uart_buffer, 0, sizeof(uart_buffer));
+    build_json();
     return true;
 }
 
@@ -175,8 +181,17 @@ void save_data_task(void *args)
 
 void app_main(void)
 {
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
+    {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
     init_spiffs();
-    
+    init_bluetooth();
+
     init_uart();
     ds1302_init(&rtc_dev);
     ds1302_start(&rtc_dev, true);

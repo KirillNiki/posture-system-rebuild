@@ -7,6 +7,8 @@ idf_component_register(
         "~/esp/posture-system/interfaces/spiffs/spiffs.c"
         "~/esp/posture-system/interfaces/uart/uart.c"
         "~/esp/posture-system/interfaces/ds1302/ds1302.c"
+        "~/esp/posture-system/interfaces/data_transer/data_transer.c"
+        "~/esp/posture-system/interfaces/bluetooth/bluetooth.c"
 
     EMBED_TXTFILES
         "./certs/cacert.pem"
@@ -24,4 +26,5 @@ idf_component_register(
         "driver"
         "esp_adc"
         "json"
+        "bt"
 )
