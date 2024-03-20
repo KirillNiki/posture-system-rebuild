@@ -35,14 +35,14 @@ static int set_cors_headers(httpd_req_t *req)
     return ESP_OK;
 }
 
+char buffer[buffer_size];
 static esp_err_t send_by_chunks(char *path, httpd_req_t *req)
 {
     int size = (int)strlen(path);
     char result_path[8 + size];
-    join_path(result_path, path);
 
+    join_path(result_path, path);
     FILE *file = fopen(result_path, "r");
-    char *buffer = malloc(buffer_size);
 
     while (1)
     {
@@ -95,9 +95,9 @@ static esp_err_t file_handler(httpd_req_t *req)
     {
         httpd_resp_set_type(req, "image/svg+xml");
     }
+
     send_by_chunks(path, req);
     memset(path, 0, strlen(path));
-
     httpd_resp_set_status(req, "200 OK");
 
     return ESP_OK;
@@ -108,8 +108,6 @@ static esp_err_t data_handler(httpd_req_t *req)
     char buffer[100];
     memset(buffer, 1, sizeof(buffer));
     httpd_req_get_hdr_value_str(req, "referer", buffer, sizeof(buffer));
-
-    printf("%s\n", json_data_buffer);
 
     set_cors_headers(req);
     httpd_resp_set_type(req, "text/javascript");
@@ -200,27 +198,28 @@ esp_err_t not_found_handler(httpd_req_t *req, httpd_err_code_t error)
 static httpd_handle_t start_webserver(void)
 {
     httpd_handle_t server = NULL;
-    httpd_ssl_config_t config = HTTPD_SSL_CONFIG_DEFAULT();
-    // httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    // httpd_ssl_config_t config = HTTPD_SSL_CONFIG_DEFAULT();
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
-    config.httpd.stack_size = httpd_stack_size;
-    config.httpd.max_uri_handlers = max_handlers;
-    config.httpd.server_port = 80;
+    config.stack_size = httpd_stack_size;
+    config.max_uri_handlers = max_handlers;
+    config.server_port = 80;
+    config.max_open_sockets = 3;
 
-    /* Load server certificate */
-    extern const unsigned char servercert_start[] asm("_binary_cacert_pem_start");
-    extern const unsigned char servercert_end[] asm("_binary_cacert_pem_end");
-    config.servercert = servercert_start;
-    config.servercert_len = servercert_end - servercert_start;
+    // /* Load server certificate */
+    // extern const unsigned char servercert_start[] asm("_binary_cacert_pem_start");
+    // extern const unsigned char servercert_end[] asm("_binary_cacert_pem_end");
+    // config.servercert = servercert_start;
+    // config.servercert_len = servercert_end - servercert_start;
 
-    /* Load server private key */
-    extern const unsigned char prvtkey_pem_start[] asm("_binary_prvtkey_pem_start");
-    extern const unsigned char prvtkey_pem_end[] asm("_binary_prvtkey_pem_end");
-    config.prvtkey_pem = prvtkey_pem_start;
-    config.prvtkey_len = prvtkey_pem_end - prvtkey_pem_start;
+    // /* Load server private key */
+    // extern const unsigned char prvtkey_pem_start[] asm("_binary_prvtkey_pem_start");
+    // extern const unsigned char prvtkey_pem_end[] asm("_binary_prvtkey_pem_end");
+    // config.prvtkey_pem = prvtkey_pem_start;
+    // config.prvtkey_len = prvtkey_pem_end - prvtkey_pem_start;
 
-    esp_err_t ret = httpd_ssl_start(&server, &config);
-    // esp_err_t ret = httpd_start(&server, &config);
+    // esp_err_t ret = httpd_ssl_start(&server, &config);
+    esp_err_t ret = httpd_start(&server, &config);
     if (ret != ESP_OK)
     {
         ESP_LOGI(TAG, "Error starting server!");

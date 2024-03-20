@@ -90,12 +90,6 @@ void build_json(void)
   cJSON_AddItemToObject(root, "infoData", infos_json);
 
   char *json_data = cJSON_Print(root);
-  // size_t copy_size = strlen(json_data);
-  // if (copy_size > max_json_buffer)
-  // {
-  //   copy_size = max_json_buffer;
-  // }
-
   memset(json_data_buffer, 0, max_json_buffer);
   memcpy(json_data_buffer, json_data, strlen(json_data));
   cJSON_Delete(root);

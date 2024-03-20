@@ -31,6 +31,7 @@ static uint8_t adv_config_done = 0;
 #define adv_config_flag (1 << 0)
 #define scan_rsp_config_flag (1 << 1)
 
+uint8_t json_data_buffer_copy[max_json_buffer];
 static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 
 static struct gatts_profile_inst gl_profile_tab[PROFILE_NUM] = {
@@ -216,23 +217,29 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         {
             if (param->read.handle == gatts_chars[i].handle && strcmp(gatts_chars[i].definition, "data") == 0)
             {
-                int copy_size = GATT_MAX_ATTR_LEN;
-                bool add_end = false;
-                if (strlen((char *)gatts_chars[i].attr_value.attr_value) - data_buffer_offset <= GATT_MAX_ATTR_LEN)
+                if (data_buffer_offset == 0)
                 {
-                    copy_size = strlen((char *)gatts_chars[i].attr_value.attr_value) - data_buffer_offset;
-                    add_end = true;
+                    memset(json_data_buffer_copy, 0, strlen((char *)json_data_buffer_copy));
+                    memcpy(json_data_buffer_copy, gatts_chars[i].attr_value.attr_value, strlen((char *)gatts_chars[i].attr_value.attr_value));
                 }
 
-                memcpy(rsp.attr_value.value, gatts_chars[i].attr_value.attr_value + data_buffer_offset, copy_size);
+                int copy_size = GATT_MAX_ATTR_LEN;
+                bool add_end = false;
+                if (strlen((char *)json_data_buffer_copy) - data_buffer_offset <= GATT_MAX_ATTR_LEN)
+                {
+                    copy_size = strlen((char *)json_data_buffer_copy) - data_buffer_offset;
+                    add_end = true;
+                }
+                memcpy(rsp.attr_value.value, json_data_buffer_copy + data_buffer_offset, copy_size);
+
                 data_buffer_offset += GATT_MAX_ATTR_LEN;
-                rsp.attr_value.len = copy_size;
                 if (add_end)
                 {
                     strcat((char *)rsp.attr_value.value, "\r");
-                    rsp.attr_value.len += 1;
+                    copy_size += 1;
                     data_buffer_offset = 0;
                 }
+                rsp.attr_value.len = copy_size;
             }
         }
         esp_ble_gatts_send_response(
@@ -250,6 +257,11 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         {
             ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
             esp_log_buffer_hex(GATTS_TAG, param->write.value, param->write.len);
+
+            esp_gatt_rsp_t rsp;
+            memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
+            rsp.attr_value.handle = param->read.handle;
+
             for (int i = 0; i < CHARS_NUM; i++)
             {
                 if (gatts_chars[i].handle == param->write.handle)
@@ -267,6 +279,12 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
                         printf("%s\n", (char *)gatts_chars[i].attr_value.attr_value);
                         set_time((char *)gatts_chars[i].attr_value.attr_value);
                     }
+                    esp_ble_gatts_send_response(
+                        gatts_if,
+                        param->read.conn_id,
+                        param->read.trans_id,
+                        ESP_GATT_OK,
+                        &rsp);
                 }
             }
         }
